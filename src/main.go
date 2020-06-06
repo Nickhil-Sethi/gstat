@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -22,28 +23,49 @@ func main() {
 
 	endpointPtr := flag.String(
 		"endpoint",
-		"https://google.com/",
-		"Endpoint to benchmark again")
+		"http://nickhil-sethi.com/",
+		"Endpoint to benchmark against")
 
 	durationPtr := flag.Int(
 		"duration",
 		30,
 		"duration of benchmark test in milliseconds. defaults to 30 seconds")
 
-	// outFilePtr := flag.String(
-	// 	"outfile",
-	// 	"benchmark.json",
-	// 	"name of file to write results to")
+	outFilePtr := flag.String(
+		"outfile",
+		"benchmark.json",
+		"name of file to write results to")
 
 	runtime.GOMAXPROCS(*threadPtr)
 
 	resultChannel := make(chan result)
-	for i := 0; i < 1000; i++ {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go compileResults(resultChannel, *outFilePtr, &wg)
+
+	timeout := time.After(
+		time.Duration(*durationPtr) * time.Second)
+
+	for keepGoing, i := true, 0; keepGoing && i < 5; i++ {
+		select {
+		case <-timeout:
+			keepGoing = false
+		default:
+		}
 		go requestEndpoint(*endpointPtr, resultChannel)
+		// keepGoing = false
 	}
 
-	<-time.After(time.Duration(*durationPtr) * time.Second)
+	// close(resultChannel)
+	wg.Wait()
 	return
+}
+
+func compileResults(resultChannel chan result, filename string, wg *sync.WaitGroup) {
+	for res := range resultChannel {
+		fmt.Println(res)
+	}
+	wg.Done()
 }
 
 func requestEndpoint(endpoint string, resultChannel chan result) {
@@ -62,7 +84,6 @@ func requestEndpoint(endpoint string, resultChannel chan result) {
 
 	defer response.Body.Close()
 
-	fmt.Println("Got status ", response.StatusCode)
 	resultRow = result{response.StatusCode, latency, false}
 	resultChannel <- resultRow
 }
