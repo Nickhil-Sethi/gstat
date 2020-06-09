@@ -23,7 +23,7 @@ func main() {
 
 	endpointPtr := flag.String(
 		"endpoint",
-		"http://nickhil-sethi.com/",
+		"http://google.com/",
 		"Endpoint to benchmark against")
 
 	durationPtr := flag.Int(
