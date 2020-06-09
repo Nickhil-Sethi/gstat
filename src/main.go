@@ -37,10 +37,15 @@ func main() {
 		"benchmark.json",
 		"name of file to write results to")
 
+	flag.Parse()
+
 	if *endpointPtr == "" {
+		fmt.Print(*endpointPtr)
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
+
+	fmt.Printf("Running benchmark test against %s\n", *endpointPtr)
 
 	runtime.GOMAXPROCS(*threadPtr)
 
@@ -48,6 +53,10 @@ func main() {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
+	// background goroutine
+	// compiles request
+	// responses and computes
+	// descriptive status
 	go compileResults(
 		resultChannel,
 		*outFilePtr,
@@ -83,7 +92,7 @@ func compileResults(
 		count++
 	}
 	avgLatency := int(totalLatency) / count
-	fmt.Printf("Launched %d requests: average latency %d\n", count, avgLatency)
+	fmt.Printf("Launched %d requests. Average latency %d\n", count, avgLatency)
 	// TODO(nickhil) : write results to file
 	wg.Done()
 }
