@@ -28,7 +28,7 @@ func main() {
 
 	durationPtr := flag.Int(
 		"duration",
-		30,
+		5,
 		"duration of benchmark test in milliseconds. defaults to 30 seconds")
 
 	outFilePtr := flag.String(
@@ -40,17 +40,29 @@ func main() {
 
 	resultChannel := make(chan requestResult)
 	var wg sync.WaitGroup
-
 	wg.Add(1)
-	go compileResults(resultChannel, *outFilePtr, &wg)
+
+	go compileResults(
+		resultChannel,
+		*outFilePtr,
+		&wg)
 
 	duration := time.Duration(*durationPtr)
+	timeout := time.After(duration * time.Second)
+
 	for i := 0; i < runtime.GOMAXPROCS(-1); i++ {
-		go streamRequests(*endpointPtr, resultChannel, duration)
+		go streamRequests(
+			*endpointPtr,
+			resultChannel,
+			timeout)
+	}
+
+	select {
+	case <-timeout:
+		close(resultChannel)
 	}
 
 	wg.Wait()
-	close(resultChannel)
 	return
 }
 
@@ -58,22 +70,28 @@ func compileResults(
 	resultChannel chan requestResult,
 	filename string,
 	wg *sync.WaitGroup) {
+	count := 0
+	var totalLatency time.Duration
 	for res := range resultChannel {
-		fmt.Println(res)
+		totalLatency += res.latency
+		count++
 	}
+	avgLatency := int(totalLatency) / count
+	fmt.Println(avgLatency)
 	wg.Done()
 }
 
-func streamRequests(endpoint string, resultChannel chan requestResult, duration time.Duration) {
-	timeout := time.After(duration * time.Second)
-
+func streamRequests(
+	endpoint string,
+	resultChannel chan requestResult,
+	timeout <-chan time.Time) {
 	for keepGoing, i := true, 0; keepGoing && i < 1000; i++ {
 		select {
 		case <-timeout:
 			keepGoing = false
 		default:
 		}
-		requestEndpoint(endpoint, resultChannel)
+		go requestEndpoint(endpoint, resultChannel)
 		time.Sleep(time.Millisecond)
 	}
 }
