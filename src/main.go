@@ -78,6 +78,7 @@ func compileResults(
 	}
 	avgLatency := int(totalLatency) / count
 	fmt.Printf("Launched %d requests: average latency %d\n", count, avgLatency)
+	// TODO(nickhil) : write results to file
 	wg.Done()
 }
 
