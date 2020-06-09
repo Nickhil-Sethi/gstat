@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -16,25 +17,30 @@ type requestResult struct {
 }
 
 func main() {
-	threadPtr := flag.Int(
-		"threads",
-		-1,
-		"Number of threads to use. Defaults to number of cores on machine.")
-
 	endpointPtr := flag.String(
-		"endpoint",
-		"http://google.com/",
+		"e",
+		"",
 		"Endpoint to benchmark against")
 
 	durationPtr := flag.Int(
-		"duration",
+		"d",
 		5,
 		"duration of benchmark test in milliseconds. defaults to 30 seconds")
 
+	threadPtr := flag.Int(
+		"t",
+		-1,
+		"Number of threads to use. Defaults to number of cores on machine.")
+
 	outFilePtr := flag.String(
-		"outfile",
+		"o",
 		"benchmark.json",
 		"name of file to write results to")
+
+	if *endpointPtr == "" {
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
 
 	runtime.GOMAXPROCS(*threadPtr)
 
