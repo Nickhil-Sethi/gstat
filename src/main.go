@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type result struct {
+type requestResult struct {
 	status  int
 	latency time.Duration
 	errored bool
@@ -38,52 +38,61 @@ func main() {
 
 	runtime.GOMAXPROCS(*threadPtr)
 
-	resultChannel := make(chan result)
+	resultChannel := make(chan requestResult)
 	var wg sync.WaitGroup
+
 	wg.Add(1)
 	go compileResults(resultChannel, *outFilePtr, &wg)
 
-	timeout := time.After(
-		time.Duration(*durationPtr) * time.Second)
-
-	for keepGoing, i := true, 0; keepGoing && i < 5; i++ {
-		select {
-		case <-timeout:
-			keepGoing = false
-		default:
-		}
-		go requestEndpoint(*endpointPtr, resultChannel)
-		// keepGoing = false
+	duration := time.Duration(*durationPtr)
+	for i := 0; i < runtime.GOMAXPROCS(-1); i++ {
+		go streamRequests(*endpointPtr, resultChannel, duration)
 	}
 
-	// close(resultChannel)
 	wg.Wait()
+	close(resultChannel)
 	return
 }
 
-func compileResults(resultChannel chan result, filename string, wg *sync.WaitGroup) {
+func compileResults(
+	resultChannel chan requestResult,
+	filename string,
+	wg *sync.WaitGroup) {
 	for res := range resultChannel {
 		fmt.Println(res)
 	}
 	wg.Done()
 }
 
-func requestEndpoint(endpoint string, resultChannel chan result) {
+func streamRequests(endpoint string, resultChannel chan requestResult, duration time.Duration) {
+	timeout := time.After(duration * time.Second)
+
+	for keepGoing, i := true, 0; keepGoing && i < 1000; i++ {
+		select {
+		case <-timeout:
+			keepGoing = false
+		default:
+		}
+		requestEndpoint(endpoint, resultChannel)
+		time.Sleep(time.Millisecond)
+	}
+}
+func requestEndpoint(endpoint string, resultChannel chan requestResult) {
 
 	before := time.Now()
 	response, err := http.Get(endpoint)
 	after := time.Now()
 
 	latency := after.Sub(before)
-	var resultRow result
+	var resultRow requestResult
 	if err != nil {
-		resultRow = result{-1, latency, true}
+		resultRow = requestResult{-1, latency, true}
 		resultChannel <- resultRow
 		return
 	}
 
 	defer response.Body.Close()
 
-	resultRow = result{response.StatusCode, latency, false}
+	resultRow = requestResult{response.StatusCode, latency, false}
 	resultChannel <- resultRow
 }
