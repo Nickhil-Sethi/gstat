@@ -97,6 +97,10 @@ func streamRequests(
 }
 func requestEndpoint(endpoint string, resultChannel chan requestResult) {
 
+	defer func() {
+		recover()
+	}()
+
 	before := time.Now()
 	response, err := http.Get(endpoint)
 	after := time.Now()
