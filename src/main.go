@@ -40,8 +40,8 @@ func main() {
 
 	resultChannel := make(chan requestResult)
 	var wg sync.WaitGroup
-	wg.Add(1)
 
+	wg.Add(1)
 	go compileResults(
 		resultChannel,
 		*outFilePtr,
@@ -77,7 +77,7 @@ func compileResults(
 		count++
 	}
 	avgLatency := int(totalLatency) / count
-	fmt.Println(avgLatency)
+	fmt.Printf("Launched %d requests: average latency %d\n", count, avgLatency)
 	wg.Done()
 }
 
