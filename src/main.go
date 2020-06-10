@@ -108,7 +108,7 @@ func streamRequests(
 		default:
 		}
 		go requestEndpoint(endpoint, resultChannel)
-		time.Sleep(time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 func requestEndpoint(endpoint string, resultChannel chan requestResult) {
