@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"text/tabwriter"
 	"time"
 )
 
@@ -45,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Running benchmark test against %s\n", *endpointPtr)
+	fmt.Printf("Running %ds benchmark test @ %s\n", *durationPtr, *endpointPtr)
 
 	runtime.GOMAXPROCS(*threadPtr)
 
@@ -85,14 +86,39 @@ func compileResults(
 	resultChannel chan requestResult,
 	filename string,
 	wg *sync.WaitGroup) {
-	count := 0
+
+	var count int64
+	var minLatency time.Duration
+	var maxLatency time.Duration
+	minLatency, maxLatency = time.Duration(290*time.Millisecond), time.Duration(0)
 	var totalLatency time.Duration
+	count = 0
+
+	// w := csv.NewWriter(os.Stdout)
+
 	for res := range resultChannel {
+		if res.latency < minLatency {
+			minLatency = res.latency
+		}
+		if res.latency > maxLatency {
+			maxLatency = res.latency
+		}
 		totalLatency += res.latency
 		count++
 	}
-	avgLatency := int(totalLatency) / count
-	fmt.Printf("Launched %d requests. Average latency %d\n", count, avgLatency)
+	if count == 0 {
+		fmt.Print("Launched 0 requests. Something is wrong.")
+		os.Exit(1)
+	}
+	ms := int64(totalLatency / time.Millisecond)
+	max := int64(maxLatency / time.Millisecond)
+	min := int64(minLatency / time.Millisecond)
+	avgLatency := ms / count
+	w := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', tabwriter.AlignRight)
+	fmt.Fprintf(w, "\tLatency statistics: %d requests\n", count)
+	fmt.Fprintf(w, "\tmax\tmin\tavg\n")
+	fmt.Fprintf(w, "\t%d\t%d\t%d\n", max, min, avgLatency)
+	w.Flush()
 	// TODO(nickhil) : write results to file
 	wg.Done()
 }
