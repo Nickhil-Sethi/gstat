@@ -127,7 +127,7 @@ func streamRequests(
 	endpoint string,
 	resultChannel chan requestResult,
 	timeout <-chan time.Time) {
-	for keepGoing, i := true, 0; keepGoing && i < 1000; i++ {
+	for keepGoing := true; keepGoing; {
 		select {
 		case <-timeout:
 			keepGoing = false
