@@ -123,8 +123,8 @@ func compileResults(
 
 	w := tabwriter.NewWriter(os.Stdout, 2, 5, 1, ' ', tabwriter.AlignRight)
 	fmt.Fprintf(w, "\t%d concurrent requests / %d threads\n", count, runtime.GOMAXPROCS(-1))
-	fmt.Fprintf(w, "\tLatency stats\n")
-	fmt.Fprintf(w, "\t\tMax\tMin\tAvg\tStDev\t\n")
+	fmt.Fprintf(w, "\tLatency stats (ms)\n")
+	fmt.Fprintf(w, "\t\tMax\tMin\tAvg\t+/- StDev\t\n")
 	fmt.Fprintf(w, "\t\t%d\t%d\t%d\t%0.2f\t\n", max, min, avg, stddev)
 	w.Flush()
 	// TODO(nickhil) : write results to file
