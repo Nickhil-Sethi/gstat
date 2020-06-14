@@ -121,11 +121,11 @@ func compileResults(
 	variance := secondMoment/count - avg*avg
 	stddev := math.Sqrt(float64(variance))
 
-	w := tabwriter.NewWriter(os.Stdout, 2, 2, 1, ' ', tabwriter.AlignRight)
+	w := tabwriter.NewWriter(os.Stdout, 2, 5, 1, ' ', tabwriter.AlignRight)
 	fmt.Fprintf(w, "\t%d concurrent requests / %d threads\n", count, runtime.GOMAXPROCS(-1))
 	fmt.Fprintf(w, "\tLatency stats\n")
-	fmt.Fprintf(w, "\t\tMax\tMin\tAvg\tStdDev\t\n")
-	fmt.Fprintf(w, "\t\t%d\t%d\t%d\t%f\t\n", max, min, avg, stddev)
+	fmt.Fprintf(w, "\t\tMax\tMin\tAvg\tStDev\t\n")
+	fmt.Fprintf(w, "\t\t%d\t%d\t%d\t%0.2f\t\n", max, min, avg, stddev)
 	w.Flush()
 	// TODO(nickhil) : write results to file
 	wg.Done()
