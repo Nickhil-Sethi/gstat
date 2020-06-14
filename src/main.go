@@ -107,17 +107,19 @@ func compileResults(
 		count++
 	}
 	if count == 0 {
-		fmt.Print("Launched 0 requests. Something is wrong.")
+		fmt.Print("Error: Launched 0 requests. Something is wrong.")
 		os.Exit(1)
 	}
 	ms := int64(totalLatency / time.Millisecond)
 	max := int64(maxLatency / time.Millisecond)
 	min := int64(minLatency / time.Millisecond)
-	avgLatency := ms / count
-	w := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', tabwriter.AlignRight)
-	fmt.Fprintf(w, "\tLatency statistics: %d requests\n", count)
-	fmt.Fprintf(w, "\tmax\tmin\tavg\n")
-	fmt.Fprintf(w, "\t%d\t%d\t%d\n", max, min, avgLatency)
+	avg := ms / count
+
+	w := tabwriter.NewWriter(os.Stdout, 2, 2, 1, ' ', tabwriter.AlignRight)
+	fmt.Fprintf(w, "\t%d concurrent requests / %d threads\n", count, runtime.GOMAXPROCS(-1))
+	fmt.Fprintf(w, "\tLatency stats\n")
+	fmt.Fprintf(w, "\t\tMax\tMin\tAvg\t\n")
+	fmt.Fprintf(w, "\t\t%d\t%d\t%d\t\n", max, min, avg)
 	w.Flush()
 	// TODO(nickhil) : write results to file
 	wg.Done()
