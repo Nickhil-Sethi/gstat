@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"runtime"
@@ -92,6 +93,7 @@ func compileResults(
 	var maxLatency time.Duration
 	minLatency, maxLatency = time.Duration(290*time.Millisecond), time.Duration(0)
 	var totalLatency time.Duration
+	var secondMoment int64
 	count = 0
 
 	// w := csv.NewWriter(os.Stdout)
@@ -104,6 +106,8 @@ func compileResults(
 			maxLatency = res.latency
 		}
 		totalLatency += res.latency
+		intLatency := int64(res.latency / time.Millisecond)
+		secondMoment += intLatency * intLatency
 		count++
 	}
 	if count == 0 {
@@ -114,12 +118,14 @@ func compileResults(
 	max := int64(maxLatency / time.Millisecond)
 	min := int64(minLatency / time.Millisecond)
 	avg := ms / count
+	variance := secondMoment/count - avg*avg
+	stddev := math.Sqrt(float64(variance))
 
 	w := tabwriter.NewWriter(os.Stdout, 2, 2, 1, ' ', tabwriter.AlignRight)
 	fmt.Fprintf(w, "\t%d concurrent requests / %d threads\n", count, runtime.GOMAXPROCS(-1))
 	fmt.Fprintf(w, "\tLatency stats\n")
-	fmt.Fprintf(w, "\t\tMax\tMin\tAvg\t\n")
-	fmt.Fprintf(w, "\t\t%d\t%d\t%d\t\n", max, min, avg)
+	fmt.Fprintf(w, "\t\tMax\tMin\tAvg\tStdDev\t\n")
+	fmt.Fprintf(w, "\t\t%d\t%d\t%d\t%f\t\n", max, min, avg, stddev)
 	w.Flush()
 	// TODO(nickhil) : write results to file
 	wg.Done()
