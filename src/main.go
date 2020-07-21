@@ -18,6 +18,12 @@ type requestResult struct {
 	errored bool
 }
 
+type csvRow struct {
+	status  string
+	latency string
+	errored string
+}
+
 func main() {
 	endpointPtr := flag.String(
 		"e",
@@ -36,7 +42,7 @@ func main() {
 
 	outFilePtr := flag.String(
 		"o",
-		"benchmark.json",
+		"benchmark.csv",
 		"name of file to write results to")
 
 	flag.Parse()
@@ -47,7 +53,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Running %ds benchmark test @ %s\n", *durationPtr, *endpointPtr)
+	fmt.Printf(
+		"Running %ds benchmark test @ %s\n",
+		*durationPtr,
+		*endpointPtr)
 
 	runtime.GOMAXPROCS(*threadPtr)
 
@@ -91,7 +100,10 @@ func compileResults(
 	var count int64
 	var minLatency time.Duration
 	var maxLatency time.Duration
-	minLatency, maxLatency = time.Duration(290*time.Millisecond), time.Duration(0)
+
+	// TODO(nickhil) : why 290?
+	minLatency, maxLatency = time.Duration(
+		290*time.Millisecond), time.Duration(0)
 	var totalLatency time.Duration
 	var secondMoment int64
 	count = 0
