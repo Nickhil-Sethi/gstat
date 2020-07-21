@@ -135,10 +135,10 @@ func streamRequests(
 	endpoint string,
 	resultChannel chan requestResult,
 	timeout <-chan time.Time) {
-	for keepGoing := true; keepGoing; {
+	for timedOut := false; !timedOut; {
 		select {
 		case <-timeout:
-			keepGoing = false
+			timedOut = true
 		default:
 		}
 		go requestEndpoint(endpoint, resultChannel)
