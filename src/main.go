@@ -58,8 +58,6 @@ func main() {
 		*durationPtr,
 		*endpointPtr)
 
-	runtime.GOMAXPROCS(*threadPtr)
-
 	resultChannel := make(chan requestResult)
 	var wg sync.WaitGroup
 
@@ -76,7 +74,9 @@ func main() {
 	duration := time.Duration(*durationPtr)
 	timeout := time.After(duration * time.Second)
 
-	for i := 0; i < runtime.GOMAXPROCS(-1); i++ {
+	// TODO(nickhil) : this requires a thread argument
+	// or numGoRoutines argument
+	for i := 0; i < runtime.GOMAXPROCS(*threadPtr); i++ {
 		go streamRequests(
 			*endpointPtr,
 			resultChannel,
