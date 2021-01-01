@@ -83,13 +83,10 @@ func main() {
 			timeout)
 	}
 
-	select {
-	case <-timeout:
-		close(resultChannel)
-	}
+	<-timeout
+	close(resultChannel)
 
 	wg.Wait()
-	return
 }
 
 func compileResults(
