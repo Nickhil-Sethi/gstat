@@ -28,17 +28,18 @@ func main() {
 	endpointPtr := flag.String(
 		"e",
 		"",
-		"Endpoint to benchmark against")
+		"Endpoint to benchmark against.")
 
-	durationPtr := flag.Int(
+	defaultDuration := 5 * 1000 * 1000 * 1000
+	durationPtr := flag.Duration(
 		"d",
-		5,
-		"duration of benchmark test in milliseconds. defaults to 30 seconds")
+		time.Duration(defaultDuration),
+		"duration of benchmark test in milliseconds.")
 
 	threadPtr := flag.Int(
 		"t",
 		-1,
-		"Number of threads to use. Defaults to number of cores on machine.")
+		"Number of threads to use.")
 
 	outFilePtr := flag.String(
 		"o",
