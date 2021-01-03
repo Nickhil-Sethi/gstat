@@ -3,16 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math"
-	"net/http"
 	"os"
 	"runtime"
 	"sync"
-	"text/tabwriter"
 	"time"
 )
 
-type requestResult struct {
+type HTTPResponse struct {
 	status  int
 	latency time.Duration
 	errored bool
@@ -48,133 +45,44 @@ func main() {
 
 	flag.Parse()
 
+	// TODO(nickhil): all inputs necessary
+	// should have their own message
 	if *endpointPtr == "" {
-		fmt.Print(*endpointPtr)
-		flag.PrintDefaults()
+		flag.Usage()
 		os.Exit(1)
 	}
 
-	fmt.Printf(
-		"Running %ds benchmark test @ %s\n",
-		*durationPtr,
-		*endpointPtr)
-
-	resultChannel := make(chan requestResult)
+	responseChannel := make(chan HTTPResponse)
 	var wg sync.WaitGroup
 
+	sm := StatManager{
+		responseChannel,
+		&wg}
+
+	duration := *durationPtr
+	endpoint := *endpointPtr
+	numGoroutines := runtime.GOMAXPROCS(*threadPtr)
+	timeout := time.After(duration)
+
+	fmt.Printf(
+		"Running %s benchmark test @ %s over %d goroutines\n",
+		duration,
+		endpoint,
+		numGoroutines)
+
 	wg.Add(1)
-	// background goroutine
-	// compiles request
-	// responses and computes
-	// descriptive status
-	go compileResults(
-		resultChannel,
-		*outFilePtr,
-		&wg)
+	go sm.compileResults()
 
-	duration := time.Duration(*durationPtr)
-	timeout := time.After(duration * time.Second)
-
-	// TODO(nickhil) : this requires a thread argument
-	// or numGoRoutines argument
-	for i := 0; i < runtime.GOMAXPROCS(*threadPtr); i++ {
-		go streamRequests(
-			*endpointPtr,
-			resultChannel,
-			timeout)
+	for i := 0; i < runtime.GOMAXPROCS(numGoroutines); i++ {
+		stream := requeststream{
+			endpoint,
+			responseChannel}
+		go stream.streamrequests(timeout)
 	}
 
 	<-timeout
-	close(resultChannel)
+	close(responseChannel)
 
 	wg.Wait()
-}
-
-func compileResults(
-	resultChannel chan requestResult,
-	filename string,
-	wg *sync.WaitGroup) {
-
-	var count int64
-	var minLatency time.Duration
-	var maxLatency time.Duration
-
-	// TODO(nickhil) : why 290?
-	minLatency, maxLatency = time.Duration(
-		290*time.Millisecond), time.Duration(0)
-	var totalLatency time.Duration
-	var secondMoment int64
-	count = 0
-
-	// w := csv.NewWriter(os.Stdout)
-
-	for res := range resultChannel {
-		if res.latency < minLatency {
-			minLatency = res.latency
-		}
-		if res.latency > maxLatency {
-			maxLatency = res.latency
-		}
-		totalLatency += res.latency
-		intLatency := int64(res.latency / time.Millisecond)
-		secondMoment += intLatency * intLatency
-		count++
-	}
-	if count == 0 {
-		fmt.Print("Error: Launched 0 requests. Something is wrong.")
-		os.Exit(1)
-	}
-	ms := int64(totalLatency / time.Millisecond)
-	max := int64(maxLatency / time.Millisecond)
-	min := int64(minLatency / time.Millisecond)
-	avg := ms / count
-	variance := secondMoment/count - avg*avg
-	stddev := math.Sqrt(float64(variance))
-
-	w := tabwriter.NewWriter(os.Stdout, 2, 5, 1, ' ', tabwriter.AlignRight)
-	fmt.Fprintf(w, "\t%d concurrent requests / %d threads\n", count, runtime.GOMAXPROCS(-1))
-	fmt.Fprintf(w, "\tLatency stats (ms)\n")
-	fmt.Fprintf(w, "\t\tMax\tMin\tAvg\t+/- StDev\t\n")
-	fmt.Fprintf(w, "\t\t%d\t%d\t%d\t%0.2f\t\n", max, min, avg, stddev)
-	w.Flush()
-	// TODO(nickhil) : write results to file
-	wg.Done()
-}
-
-func streamRequests(
-	endpoint string,
-	resultChannel chan requestResult,
-	timeout <-chan time.Time) {
-	for timedOut := false; !timedOut; {
-		select {
-		case <-timeout:
-			timedOut = true
-		default:
-		}
-		go requestEndpoint(endpoint, resultChannel)
-		time.Sleep(10 * time.Millisecond)
-	}
-}
-func requestEndpoint(endpoint string, resultChannel chan requestResult) {
-
-	defer func() {
-		recover()
-	}()
-
-	before := time.Now()
-	response, err := http.Get(endpoint)
-	after := time.Now()
-
-	latency := after.Sub(before)
-	var resultRow requestResult
-	if err != nil {
-		resultRow = requestResult{-1, latency, true}
-		resultChannel <- resultRow
-		return
-	}
-
-	defer response.Body.Close()
-
-	resultRow = requestResult{response.StatusCode, latency, false}
-	resultChannel <- resultRow
+	sm.writeResults()
 }
