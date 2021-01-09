@@ -1,9 +1,16 @@
 package main
 
 import (
-	"text/tabwriter"
+	"fmt"
 	"github.com/aybabtme/uniplot/histogram"
+	"math"
+	"os"
+	"runtime"
+	"sync"
+	"text/tabwriter"
+	"time"
 )
+
 type StatManager struct {
 	responseChannel chan HTTPResponse
 	wg              *sync.WaitGroup

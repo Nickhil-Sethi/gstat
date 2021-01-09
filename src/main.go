@@ -1,12 +1,12 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"os"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/alexflint/go-arg"
 )
 
 type HTTPResponse struct {
