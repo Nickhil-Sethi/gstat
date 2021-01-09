@@ -22,35 +22,14 @@ type csvRow struct {
 }
 
 func main() {
-	endpointPtr := flag.String(
-		"e",
-		"",
-		"Endpoint to benchmark against.")
-
-	defaultDuration := 5 * 1000 * 1000 * 1000
-	durationPtr := flag.Duration(
-		"d",
-		time.Duration(defaultDuration),
-		"duration of benchmark test in milliseconds.")
-
-	threadPtr := flag.Int(
-		"t",
-		-1,
-		"Number of threads to use.")
-
-	outFilePtr := flag.String(
-		"o",
-		"benchmark.csv",
-		"name of file to write results to")
-
-	flag.Parse()
-
-	// TODO(nickhil): all inputs necessary
-	// should have their own message
-	if *endpointPtr == "" {
-		flag.Usage()
-		os.Exit(1)
+	var benchmarktask struct {
+		Endpoint string `arg:"required"`
+		Duration time.Duration `default:time.Duration(5 * 1000 * 1000 * 1000)`
+		NumGoroutines int `default:-1`
 	}
+
+	arg.MustParse(&benchmarktask)
+	fmt.Print(benchmarktask)
 
 	responseChannel := make(chan HTTPResponse)
 	var wg sync.WaitGroup
@@ -59,9 +38,10 @@ func main() {
 		responseChannel,
 		&wg}
 
-	duration := *durationPtr
-	endpoint := *endpointPtr
-	numGoroutines := runtime.GOMAXPROCS(*threadPtr)
+	duration := benchmarktask.Duration
+	endpoint := benchmarktask.Endpoint
+	numGoroutines := runtime.GOMAXPROCS(
+		benchmarktask.NumGoroutines)
 	timeout := time.After(duration)
 
 	fmt.Printf(
@@ -71,18 +51,18 @@ func main() {
 		numGoroutines)
 
 	wg.Add(1)
-	go sm.compileResults()
+	go sm.compileResults(responseChannel, &wg)
 
 	for i := 0; i < runtime.GOMAXPROCS(numGoroutines); i++ {
-		stream := requeststream{
+		stream := RequestStream{
 			endpoint,
 			responseChannel}
-		go stream.streamrequests(timeout)
+		go stream.StreamRequests(timeout)
 	}
 
 	<-timeout
 	close(responseChannel)
 
 	wg.Wait()
-	sm.writeResults()
+	// sm.writeResults()
 }
