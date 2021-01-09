@@ -5,40 +5,37 @@ import (
 	"time"
 )
 
-type requeststream struct {
-	endpoint        string
-	responseChannel chan HTTPResponse
+type RequestStream struct {
+	Endpoint        string
+	ResponseChannel chan HTTPResponse
 }
 
-func (*requeststream) streamRequest() (
+func (r *RequestStream) StreamRequests(
 	timeout <-chan time.Time) {
-
-	endpoint := requeststream.endpoint
-	resopnseChannel := requeststream.responseChannel
 
 	for timedOut := false; !timedOut; {
 		select {
 		case <-timeout:
 			timedOut = true
 		default:
-			go requestEndpoint(endpoint, responseChannel)
+			go r.RequestEndpoint()
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
 }
 
-func (*requeststream) requestEndpoint() {
+func (r *RequestStream) RequestEndpoint() {
 
 	defer func() {
 		recover()
 	}()
 
-	endpoint := requeststream.endpoint
-	responseChannel := requeststream.responseChannel
+	var Endpoint string = r.Endpoint
+	var responseChannel chan HTTPResponse = r.ResponseChannel
 
 	var resultRow HTTPResponse
 	before := time.Now()
-	response, err := http.Get(endpoint)
+	response, err := http.Get(Endpoint)
 	after := time.Now()
 
 	latency := after.Sub(before)

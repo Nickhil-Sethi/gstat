@@ -39,7 +39,7 @@ func (*StatManager) writeResults(
 	compiledResults []HTTPResponse,
 	filename string) error {
 
-	if length(compiledResults) == 0 {
+	if len(compiledResults) == 0 {
 		return errors.New("Received empty results array.")
 	}
 
@@ -91,5 +91,6 @@ func (*StatManager) writeResults(
 	fmt.Fprintf(w, "\t\t%d\t%d\t%d\t%0.2f\t\n", max, min, avg, stddev)
 	w.Flush()
 
-	// TODO(nickhil) : write results to file
+	// TODO(nickhil) : write results to filea
+	return nil
 }
