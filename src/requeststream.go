@@ -1,8 +1,8 @@
 package main
 
 import (
-	"math"
 	"net/http"
+	"time"
 )
 
 type requeststream struct {
