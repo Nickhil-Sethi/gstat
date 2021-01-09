@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"errors"
 	"github.com/aybabtme/uniplot/histogram"
 	"math"
 	"os"
@@ -21,7 +22,7 @@ func (*StatManager) writeHistogram(latencyData []float64) {
 	histogram.Fprint(os.Stdout, latencyHist, histogram.Linear(5))
 }
 
-func (*StatManager) compileResult(
+func (*StatManager) compileResults(
 	responseChannel chan HTTPResponse,
 	wg *sync.WaitGroup) []HTTPResponse {
 
@@ -36,10 +37,10 @@ func (*StatManager) compileResult(
 
 func (*StatManager) writeResults(
 	compiledResults []HTTPResponse,
-	filename string) Error {
+	filename string) error {
 
 	if length(compiledResults) == 0 {
-		return Error("Received empty results array.")
+		return errors.New("Received empty results array.")
 	}
 
 	var count int64
