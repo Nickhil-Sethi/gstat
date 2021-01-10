@@ -22,14 +22,13 @@ type csvRow struct {
 }
 
 func main() {
-	var benchmarktask struct {
+	var benchmarkargs struct {
 		Endpoint string `arg:"required"`
-		Duration time.Duration `default:time.Duration(5 * 1000 * 1000 * 1000)`
-		NumGoroutines int `default:-1`
+		Duration time.Duration `default:"30s"`
+		NumGoroutines int `default:"-1"`
 	}
 
-	arg.MustParse(&benchmarktask)
-	fmt.Print(benchmarktask)
+	arg.MustParse(&benchmarkargs)
 
 	responseChannel := make(chan HTTPResponse)
 	var wg sync.WaitGroup
@@ -49,7 +48,7 @@ func main() {
 		duration,
 		endpoint,
 		numGoroutines)
-
+	return
 	wg.Add(1)
 	go sm.compileResults(responseChannel, &wg)
 
