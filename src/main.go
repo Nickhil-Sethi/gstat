@@ -37,10 +37,10 @@ func main() {
 		responseChannel,
 		&wg}
 
-	duration := benchmarktask.Duration
-	endpoint := benchmarktask.Endpoint
+	duration := benchmarkargs.Duration
+	endpoint := benchmarkargs.Endpoint
 	numGoroutines := runtime.GOMAXPROCS(
-		benchmarktask.NumGoroutines)
+		benchmarkargs.NumGoroutines)
 	timeout := time.After(duration)
 
 	fmt.Printf(
@@ -48,7 +48,7 @@ func main() {
 		duration,
 		endpoint,
 		numGoroutines)
-	return
+
 	wg.Add(1)
 	go sm.compileResults(responseChannel, &wg)
 
@@ -63,5 +63,4 @@ func main() {
 	close(responseChannel)
 
 	wg.Wait()
-	// sm.writeResults()
 }

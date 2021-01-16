@@ -17,14 +17,14 @@ type StatManager struct {
 	wg              *sync.WaitGroup
 }
 
-func (*StatManager) writeHistogram(latencyData []float64) {
+func (s *StatManager) WriteHistogram(latencyData []float64) {
 	latencyHist := histogram.Hist(5, latencyData)
 	histogram.Fprint(os.Stdout, latencyHist, histogram.Linear(5))
 }
 
-func (*StatManager) compileResults(
+func (s *StatManager) compileResults(
 	responseChannel chan HTTPResponse,
-	wg *sync.WaitGroup) []HTTPResponse {
+	wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
@@ -32,12 +32,11 @@ func (*StatManager) compileResults(
 	for HTTPResponse := range responseChannel {
 		compiledResults = append(compiledResults, HTTPResponse)
 	}
-	return compiledResults
+	s.WriteResults(compiledResults)
 }
 
-func (*StatManager) writeResults(
-	compiledResults []HTTPResponse,
-	filename string) error {
+func (s *StatManager) WriteResults(
+	compiledResults []HTTPResponse) error {
 
 	if len(compiledResults) == 0 {
 		return errors.New("Received empty results array.")
@@ -91,6 +90,6 @@ func (*StatManager) writeResults(
 	fmt.Fprintf(w, "\t\t%d\t%d\t%d\t%0.2f\t\n", max, min, avg, stddev)
 	w.Flush()
 
-	// TODO(nickhil) : write results to filea
+	s.WriteHistogram(latencyData)
 	return nil
 }
