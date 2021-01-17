@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"github.com/aybabtme/uniplot/histogram"
 	"math"
 	"os"
