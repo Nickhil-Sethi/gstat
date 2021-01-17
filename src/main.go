@@ -23,9 +23,9 @@ type csvRow struct {
 
 func main() {
 	var benchmarkargs struct {
-		Endpoint string `arg:"required"`
-		Duration time.Duration `default:"30s"`
-		NumGoroutines int `default:"-1"`
+		Endpoint      string        `arg:"required"`
+		Duration      time.Duration `default:"30s"`
+		NumGoroutines int           `default:"-1"`
 	}
 
 	arg.MustParse(&benchmarkargs)
